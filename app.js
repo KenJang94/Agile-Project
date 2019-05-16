@@ -77,7 +77,6 @@ app.get('/logout', (request, response) => {
 app.get('/index_b', async (request, response) => {
     var getmoney = await fbdb.collection('users').doc(user_email).get();
     hbucks = await getmoney.data()['hbucks'];
-    console.log(user_email, hbucks);
     response.render('index_b.hbs', {
         title_page: 'Official Front Page',
         header: 'Fight Simulator',
@@ -122,7 +121,7 @@ app.get('/sign_up', (request, response) => {
     })
 });
 
-app.get('/store_sword', async (request, response) => {
+app.get('/store', async (request, response) => {
     if (authentication === false) {
         response.redirect('/')
     } else {
@@ -135,16 +134,39 @@ app.get('/store_sword', async (request, response) => {
                 var dps = await users_character.data()['character_dps']
                 var current_user = await fbdb.collection('users').doc(user_email).get();
                 var money = await current_user.data()['hbucks'];
-
-                response.render('store_sword.hbs', {
-                    title_page: 'Sword',
-                    header: 'Sword',
-                    username: f_name,
-                    character_name: `${character_name}`,
-                    character_health: `${health}`,
-                    character_dps: `${dps}`,
-                    currency: `${money}`
-                })
+                var user_class = await users_character.data()['class'];
+                
+                if (user_class == 'Sword') {
+                    response.render('store_sword.hbs', {
+                        title_page: 'Sword',
+                        header: 'Sword',
+                        username: f_name,
+                        character_name: `${character_name}`,
+                        character_health: `${health}`,
+                        character_dps: `${dps}`,
+                        currency: `${money}`
+                    })
+                } else if (user_class == 'Axe') {
+                    response.render('store_blunt.hbs', {
+                        title_page: 'Axe',
+                        header: 'Axe',
+                        username: f_name,
+                        character_name: `${character_name}`,
+                        character_health: `${health}`,
+                        character_dps: `${dps}`,
+                        currency: `${money}`
+                    })
+                } else if (user_class == 'Spear') {
+                    response.render('store_spear.hbs', {
+                        title_page: 'Spear',
+                        header: 'Spear',
+                        username: f_name,
+                        character_name: `${character_name}`,
+                        character_health: `${health}`,
+                        character_dps: `${dps}`,
+                        currency: `${money}`
+                    })
+                }
             } catch (e) {
                 response.render('character.hbs', {
                     title_page: 'My Character Page',
@@ -169,97 +191,6 @@ app.get('/store_sword', async (request, response) => {
 
 
 });
-
-app.get('/store_spear', async (request, response) => {
-    if (authentication === false) {
-        response.redirect('/')
-    } else {
-        var exist = await user_db.check_character_exist(user_email);
-        if (exist === true) {
-            try {
-                var users_character = await fbdb.collection('characters').doc(user_email).get();
-                var character_name = await users_character.data()['character_name'];
-                var health = await users_character.data()['character_health'];
-                var dps = await users_character.data()['character_dps']
-
-                response.render('store_spear.hbs', {
-                    title_page: 'Spear',
-                    header: 'Spear',
-                    username: f_name,
-                    character_name: `${character_name}`,
-                    character_health: `${health}`,
-                    character_dps: `${dps}`
-                })
-            } catch (e) {
-                response.render('character.hbs', {
-                    title_page: 'My Character Page',
-                    header: 'Character Stats',
-                    username: f_name,
-                    character_name: 'CREATE CHARACTER NOW',
-                    character_health: 'CREATE CHARACTER NOW',
-                    character_dps: 'CREATE CHARACTER NOW'
-                })
-            }
-        } else {
-            response.render('character.hbs', {
-                title_page: 'My Character Page',
-                header: 'Character Stats',
-                username: f_name,
-                character_name: 'CREATE CHARACTER NOW',
-                character_health: 'CREATE CHARACTER NOW',
-                character_dps: 'CREATE CHARACTER NOW'
-            })
-        }
-    }
-
-
-});
-
-app.get('/store_blunt', async (request, response) => {
-    if (authentication === false) {
-        response.redirect('/')
-    } else {
-        var exist = await user_db.check_character_exist(user_email);
-        if (exist === true) {
-            try {
-                var users_character = await fbdb.collection('characters').doc(user_email).get();
-                var character_name = await users_character.data()['character_name'];
-                var health = await users_character.data()['character_health'];
-                var dps = await users_character.data()['character_dps']
-
-                response.render('store_blunt.hbs', {
-                    title_page: 'Blunt',
-                    header: 'Blunt',
-                    username: f_name,
-                    character_name: `${character_name}`,
-                    character_health: `${health}`,
-                    character_dps: `${dps}`
-                })
-            } catch (e) {
-                response.render('character.hbs', {
-                    title_page: 'My Character Page',
-                    header: 'Character Stats',
-                    username: f_name,
-                    character_name: 'CREATE CHARACTER NOW',
-                    character_health: 'CREATE CHARACTER NOW',
-                    character_dps: 'CREATE CHARACTER NOW'
-                })
-            }
-        } else {
-            response.render('character.hbs', {
-                title_page: 'My Character Page',
-                header: 'Character Stats',
-                username: f_name,
-                character_name: 'CREATE CHARACTER NOW',
-                character_health: 'CREATE CHARACTER NOW',
-                character_dps: 'CREATE CHARACTER NOW'
-            })
-        }
-    }
-
-
-});
-
 
 app.post('/insert', (request, response) => {
     var first_name = request.body.first_name;
@@ -288,6 +219,9 @@ app.get('/character', async (request, response) => {
                 var character_name = await users_character.data()['character_name'];
                 var health = await users_character.data()['character_health'];
                 var dps = await users_character.data()['character_dps'];
+                var user_class = await users_character.data()['class'];
+                var gender = await users_character.data()['gender'];
+                var item = await users_character.data()['item'];
 
                 response.render('character.hbs', {
                     title_page: 'My Character Page',
@@ -295,7 +229,10 @@ app.get('/character', async (request, response) => {
                     username: f_name,
                     character_name: `${character_name}`,
                     character_health: `${health}`,
-                    character_dps: `${dps}`
+                    character_dps: `${dps}`,
+                    character_class: `${user_class}`,
+                    character_gender: `${gender}`,
+                    character_item: `${item}`
                 })
             } catch (e) {
                 response.render('character.hbs', {
@@ -352,10 +289,17 @@ app.post('/create_character', async (request, response) => {
     } else {
         var healthy = _.random(1, 100);
         var dps = _.round(healthy / 3);
-        fbdb.collection('characters').doc(user_email).set({
+        var character_class = request.body.character_class;
+        var character_gender = request.body.character_gender;
+        console.log(character_class);
+        console.log(character_gender);
+        await fbdb.collection('characters').doc(user_email).set({
             character_name: character_name,
             character_health: healthy,
             character_dps: dps,
+            class: character_class,
+            gender: character_gender,
+            item: 'Butter Knife',
             win: 0,
             loss: 0
         });
