@@ -2,10 +2,10 @@
   "name": "final-project",
   "version": "1.0.0",
   "description": "",
-  "main": "webapp.js",
+  "main": "app.js",
   "scripts": {
-    "test": "mocha --exit",
-    "start": "webapp.js"
+    "test": "mocha || True",
+    "start": "app.js"
   },
   "author": "",
   "license": "ISC",
@@ -25,10 +25,10 @@
     "hbs": "^4.0.4",
     "messagebird": "^2.4.1",
     "mocha": "^6.1.4",
-    "mochai": "^0.2.5",
     "mockingbird": "^0.3.0",
     "mongodb": "^3.2.3",
     "nock": "^10.0.6",
+    "node": "^12.2.0",
     "request": "^2.88.0",
     "supertest": "^4.0.2",
     "timeout": "^0.2.1",

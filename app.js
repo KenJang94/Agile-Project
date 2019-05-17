@@ -34,6 +34,7 @@ var authentication = false;
 var user = 'Characters';
 var hbucks = 0;
 
+
 const user_db = require('./javascript/user_db.js');
 const character_db = require('./javascript/character_db.js');
 
@@ -135,6 +136,7 @@ app.get('/store', async (request, response) => {
                 var current_user = await fbdb.collection('users').doc(user_email).get();
                 var money = await current_user.data()['hbucks'];
                 var user_class = await users_character.data()['class'];
+                var user_item = await users_character.data()['item'];
                 
                 if (user_class == 'Sword') {
                     response.render('store_sword.hbs', {
@@ -144,6 +146,8 @@ app.get('/store', async (request, response) => {
                         character_name: `${character_name}`,
                         character_health: `${health}`,
                         character_dps: `${dps}`,
+                        character_class: `${user_class}`,
+                        character_item: `${user_item}`,
                         currency: `${money}`
                     })
                 } else if (user_class == 'Axe') {
@@ -154,6 +158,8 @@ app.get('/store', async (request, response) => {
                         character_name: `${character_name}`,
                         character_health: `${health}`,
                         character_dps: `${dps}`,
+                        character_class: `${user_class}`,
+                        character_item: `${user_item}`,
                         currency: `${money}`
                     })
                 } else if (user_class == 'Spear') {
@@ -164,9 +170,12 @@ app.get('/store', async (request, response) => {
                         character_name: `${character_name}`,
                         character_health: `${health}`,
                         character_dps: `${dps}`,
+                        character_class: `${user_class}`,
+                        character_item: `${user_item}`,
                         currency: `${money}`
                     })
                 }
+                
             } catch (e) {
                 response.render('character.hbs', {
                     title_page: 'My Character Page',
@@ -283,27 +292,67 @@ app.get('/character_creation', async (request, response) => {
 
 app.post('/create_character', async (request, response) => {
     var character_name = request.body.character_name;
+    var character_class = request.body.character_class;
     var exist = await user_db.check_character_exist(user_email);
     if (exist === true) {
         response.redirect('/character_creation')
     } else {
-        var healthy = _.random(1, 100);
-        var dps = _.round(healthy / 3);
-        var character_class = request.body.character_class;
-        var character_gender = request.body.character_gender;
-        console.log(character_class);
-        console.log(character_gender);
-        await fbdb.collection('characters').doc(user_email).set({
-            character_name: character_name,
-            character_health: healthy,
-            character_dps: dps,
-            class: character_class,
-            gender: character_gender,
-            item: 'Butter Knife',
-            win: 0,
-            loss: 0
-        });
-        response.redirect('/character')
+        if (character_class == 'Sword') {
+            var base_healthy = _.random(1, 100);
+            var base_dps = _.round(base_healthy / 3);
+            var modified_health = base_healthy + 1;
+            var modified_dps = base_dps + 1;
+            var character_class = request.body.character_class;
+            await fbdb.collection('characters').doc(user_email).set({
+                character_name: character_name,
+                character_health: modified_health,
+                character_dps: modified_dps,
+                base_health: base_healthy,
+                base_dps: base_dps, 
+                class: character_class,
+                item: 'Butter Knife',
+                win: 0,
+                loss: 0
+            });
+            response.redirect('/character')
+        } else if (character_class == 'Spear') {
+            var base_healthy = _.random(1, 100);
+            var base_dps = _.round(base_healthy / 3);
+            var modified_health = base_healthy + 1;
+            var modified_dps = base_dps + 1;
+            var user_class = request.body.character_class;
+            await fbdb.collection('characters').doc(user_email).set({
+                character_name: character_name,
+                character_health: modified_health,
+                character_dps: modified_dps,
+                base_health: base_healthy,
+                base_dps: base_dps, 
+                class: user_class,
+                item: 'Stick',
+                win: 0,
+                loss: 0
+            });
+            response.redirect('/character')
+        } else {
+            var base_healthy = _.random(1, 100);
+            var base_dps = _.round(base_healthy / 3);
+            var character_class = request.body.character_class;
+            var modified_health = base_healthy + 1;
+            var modified_dps = base_dps + 1;
+            await fbdb.collection('characters').doc(user_email).set({
+                character_name: character_name,
+                character_health: modified_health,
+                character_dps: modified_dps,
+                base_health: base_healthy,
+                base_dps: base_dps, 
+                class: character_class,
+                item: 'Shovel',
+                win: 0,
+                loss: 0
+            });
+            response.redirect('/character')
+        }
+        
     }
 });
 
@@ -330,7 +379,7 @@ app.get('/account', async (request, response) => {
     }
 });
 
-app.get('/bought1', async (request, response) => {
+app.get('/sword_bought1', async (request, response) => {
     var user_current = await fbdb.collection('users').doc(user_email).get();
     hbucks = user_current.data()['hbucks'];
     if (hbucks >= 50) {
@@ -340,14 +389,18 @@ app.get('/bought1', async (request, response) => {
         }
         fbdb.collection('users').doc(user_email).update(hbucks_object)
         var current = await fbdb.collection('characters').doc(user_email).get();
-        var old_health = await current.data()['character_health'];
-        var old_dps = await current.data()['character_dps'];
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
         var new_health = {
             character_health: old_health + 3
         };
         var new_dps = {
             character_dps: old_dps + 3
         };
+        var new_item = {
+            item: 'Long Sword'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
         fbdb.collection('characters').doc(user_email).update(new_health);
         fbdb.collection('characters').doc(user_email).update(new_dps);
         response.render('bought.hbs', {
@@ -360,6 +413,8 @@ app.get('/bought1', async (request, response) => {
         var dps = await users_character.data()['character_dps']
         var current_user = await fbdb.collection('users').doc(user_email).get();
         var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
 
         response.render('store_sword.hbs', {
             output: 'You do not have enough hbucks!',
@@ -369,12 +424,14 @@ app.get('/bought1', async (request, response) => {
             character_name: `${character_name}`,
             character_health: `${health}`,
             character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
             currency: `${money}`
         })
     }
 });
 
-app.get('/bought2', async (request, response) => {
+app.get('/sword_bought2', async (request, response) => {
     var user_current = await fbdb.collection('users').doc(user_email).get();
     hbucks = user_current.data()['hbucks'];
     if (hbucks >= 100) {
@@ -384,14 +441,18 @@ app.get('/bought2', async (request, response) => {
         }
         fbdb.collection('users').doc(user_email).update(hbucks_object)
         var current = await fbdb.collection('characters').doc(user_email).get();
-        var old_health = await current.data()['character_health'];
-        var old_dps = await current.data()['character_dps'];
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
         var new_health = {
             character_health: old_health + 7
         };
         var new_dps = {
             character_dps: old_dps + 7
         };
+        var new_item = {
+            item: 'Great Sword'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
         fbdb.collection('characters').doc(user_email).update(new_health);
         fbdb.collection('characters').doc(user_email).update(new_dps);
         response.render('bought.hbs', {
@@ -404,6 +465,8 @@ app.get('/bought2', async (request, response) => {
         var dps = await users_character.data()['character_dps']
         var current_user = await fbdb.collection('users').doc(user_email).get();
         var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
 
         response.render('store_sword.hbs', {
             output: 'You do not have enough hbucks!',
@@ -413,12 +476,14 @@ app.get('/bought2', async (request, response) => {
             character_name: `${character_name}`,
             character_health: `${health}`,
             character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
             currency: `${money}`
         })
     }
 });
 
-app.get('/bought3', async (request, response) => {
+app.get('/sword_bought3', async (request, response) => {
     var user_current = await fbdb.collection('users').doc(user_email).get();
     hbucks = user_current.data()['hbucks'];
     if (hbucks >= 200) {
@@ -428,14 +493,18 @@ app.get('/bought3', async (request, response) => {
         }
         fbdb.collection('users').doc(user_email).update(hbucks_object)
         var current = await fbdb.collection('characters').doc(user_email).get();
-        var old_health = await current.data()['character_health'];
-        var old_dps = await current.data()['character_dps'];
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
         var new_health = {
             character_health: old_health + 20
         };
         var new_dps = {
             character_dps: old_dps + 20
         };
+        var new_item = {
+            item: 'Katana'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
         fbdb.collection('characters').doc(user_email).update(new_health);
         fbdb.collection('characters').doc(user_email).update(new_dps);
         
@@ -449,6 +518,8 @@ app.get('/bought3', async (request, response) => {
         var dps = await users_character.data()['character_dps']
         var current_user = await fbdb.collection('users').doc(user_email).get();
         var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
 
         response.render('store_sword.hbs', {
             output: 'You do not have enough hbucks!',
@@ -458,6 +529,322 @@ app.get('/bought3', async (request, response) => {
             character_name: `${character_name}`,
             character_health: `${health}`,
             character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
+            currency: `${money}`
+        })
+    }
+});
+
+app.get('/spear_bought1', async (request, response) => {
+    var user_current = await fbdb.collection('users').doc(user_email).get();
+    hbucks = user_current.data()['hbucks'];
+    if (hbucks >= 50) {
+        hbucks = hbucks - 50 
+        var hbucks_object = {
+            hbucks : (user_current.data()['hbucks']) - 50
+        }
+        fbdb.collection('users').doc(user_email).update(hbucks_object)
+        var current = await fbdb.collection('characters').doc(user_email).get();
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
+        var new_health = {
+            character_health: old_health + 2
+        };
+        var new_dps = {
+            character_dps: old_dps + 4
+        };
+        var new_item = {
+            item: 'Lance'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_health);
+        fbdb.collection('characters').doc(user_email).update(new_dps);
+        fbdb.collection('characters').doc(user_email).update(new_item);
+        response.render('bought.hbs', {
+            name: f_name
+        })
+    } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
+        var character_name = await users_character.data()['character_name'];
+        var health = await users_character.data()['character_health'];
+        var dps = await users_character.data()['character_dps']
+        var current_user = await fbdb.collection('users').doc(user_email).get();
+        var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
+
+        response.render('store_sword.hbs', {
+            output: 'You do not have enough hbucks!',
+            title_page: 'Sword',
+            header: 'Sword',
+            username: f_name,
+            character_name: `${character_name}`,
+            character_health: `${health}`,
+            character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
+            currency: `${money}`
+        })
+    }
+});
+
+app.get('/spear_bought2', async (request, response) => {
+    var user_current = await fbdb.collection('users').doc(user_email).get();
+    hbucks = user_current.data()['hbucks'];
+    if (hbucks >= 100) {
+        hbucks = hbucks - 100 
+        var hbucks_object = {
+            hbucks : (user_current.data()['hbucks']) - 100
+        }
+        fbdb.collection('users').doc(user_email).update(hbucks_object)
+        var current = await fbdb.collection('characters').doc(user_email).get();
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
+        var new_health = {
+            character_health: old_health + 4
+        };
+        var new_dps = {
+            character_dps: old_dps + 10
+        };
+        var new_item = {
+            item: 'Javalin'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
+        fbdb.collection('characters').doc(user_email).update(new_health);
+        fbdb.collection('characters').doc(user_email).update(new_dps);
+        response.render('bought.hbs', {
+            name: f_name
+        })
+    } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
+        var character_name = await users_character.data()['character_name'];
+        var health = await users_character.data()['character_health'];
+        var dps = await users_character.data()['character_dps']
+        var current_user = await fbdb.collection('users').doc(user_email).get();
+        var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
+
+        response.render('store_sword.hbs', {
+            output: 'You do not have enough hbucks!',
+            title_page: 'Sword',
+            header: 'Sword',
+            username: f_name,
+            character_name: `${character_name}`,
+            character_health: `${health}`,
+            character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
+            currency: `${money}`
+        })
+    }
+});
+
+app.get('/spear_bought3', async (request, response) => {
+    var user_current = await fbdb.collection('users').doc(user_email).get();
+    hbucks = user_current.data()['hbucks'];
+    if (hbucks >= 200) {
+        hbucks = hbucks - 200 
+        var hbucks_object = {
+            hbucks : (user_current.data()['hbucks']) - 200
+        }
+        fbdb.collection('users').doc(user_email).update(hbucks_object)
+        var current = await fbdb.collection('characters').doc(user_email).get();
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
+        var new_health = {
+            character_health: old_health + 10
+        };
+        var new_dps = {
+            character_dps: old_dps + 30
+        };
+        var new_item = {
+            item: 'Glaive'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
+        fbdb.collection('characters').doc(user_email).update(new_health);
+        fbdb.collection('characters').doc(user_email).update(new_dps);
+        
+        response.render('bought.hbs', {
+            name: f_name
+        })
+    } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
+        var character_name = await users_character.data()['character_name'];
+        var health = await users_character.data()['character_health'];
+        var dps = await users_character.data()['character_dps']
+        var current_user = await fbdb.collection('users').doc(user_email).get();
+        var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
+
+        response.render('store_sword.hbs', {
+            output: 'You do not have enough hbucks!',
+            title_page: 'Sword',
+            header: 'Sword',
+            username: f_name,
+            character_name: `${character_name}`,
+            character_health: `${health}`,
+            character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
+            currency: `${money}`
+        })
+    }
+});
+
+app.get('/blunt_bought1', async (request, response) => {
+    var user_current = await fbdb.collection('users').doc(user_email).get();
+    hbucks = user_current.data()['hbucks'];
+    if (hbucks >= 50) {
+        hbucks = hbucks - 50 
+        var hbucks_object = {
+            hbucks : (user_current.data()['hbucks']) - 50
+        }
+        fbdb.collection('users').doc(user_email).update(hbucks_object)
+        var current = await fbdb.collection('characters').doc(user_email).get();
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
+        var new_health = {
+            character_health: old_health + 1
+        };
+        var new_dps = {
+            character_dps: old_dps + 6
+        };
+        var new_item = {
+            item: 'Tomahawk'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
+        fbdb.collection('characters').doc(user_email).update(new_health);
+        fbdb.collection('characters').doc(user_email).update(new_dps);
+        response.render('bought.hbs', {
+            name: f_name
+        })
+    } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
+        var character_name = await users_character.data()['character_name'];
+        var health = await users_character.data()['character_health'];
+        var dps = await users_character.data()['character_dps']
+        var current_user = await fbdb.collection('users').doc(user_email).get();
+        var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
+
+        response.render('store_sword.hbs', {
+            output: 'You do not have enough hbucks!',
+            title_page: 'Sword',
+            header: 'Sword',
+            username: f_name,
+            character_name: `${character_name}`,
+            character_health: `${health}`,
+            character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
+            currency: `${money}`
+        })
+    }
+});
+
+app.get('/blunt_bought2', async (request, response) => {
+    var user_current = await fbdb.collection('users').doc(user_email).get();
+    hbucks = user_current.data()['hbucks'];
+    if (hbucks >= 100) {
+        hbucks = hbucks - 100 
+        var hbucks_object = {
+            hbucks : (user_current.data()['hbucks']) - 100
+        }
+        fbdb.collection('users').doc(user_email).update(hbucks_object)
+        var current = await fbdb.collection('characters').doc(user_email).get();
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
+        var new_health = {
+            character_health: old_health + 2
+        };
+        var new_dps = {
+            character_dps: old_dps + 15
+        };
+        var new_item = {
+            item: 'Battle Axe'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
+        fbdb.collection('characters').doc(user_email).update(new_health);
+        fbdb.collection('characters').doc(user_email).update(new_dps);
+        response.render('bought.hbs', {
+            name: f_name
+        })
+    } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
+        var character_name = await users_character.data()['character_name'];
+        var health = await users_character.data()['character_health'];
+        var dps = await users_character.data()['character_dps']
+        var current_user = await fbdb.collection('users').doc(user_email).get();
+        var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
+
+        response.render('store_sword.hbs', {
+            output: 'You do not have enough hbucks!',
+            title_page: 'Sword',
+            header: 'Sword',
+            username: f_name,
+            character_name: `${character_name}`,
+            character_health: `${health}`,
+            character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
+            currency: `${money}`
+        })
+    }
+});
+
+app.get('/blunt_bought3', async (request, response) => {
+    var user_current = await fbdb.collection('users').doc(user_email).get();
+    hbucks = user_current.data()['hbucks'];
+    if (hbucks >= 200) {
+        hbucks = hbucks - 200 
+        var hbucks_object = {
+            hbucks : (user_current.data()['hbucks']) - 200
+        }
+        fbdb.collection('users').doc(user_email).update(hbucks_object)
+        var current = await fbdb.collection('characters').doc(user_email).get();
+        var old_health = await current.data()['base_health'];
+        var old_dps = await current.data()['base_dps'];
+        var new_health = {
+            character_health: old_health + 5
+        };
+        var new_dps = {
+            character_dps: old_dps + 50
+        };
+        var new_item = {
+            item: 'Glaive'
+        };
+        fbdb.collection('characters').doc(user_email).update(new_item);
+        fbdb.collection('characters').doc(user_email).update(new_health);
+        fbdb.collection('characters').doc(user_email).update(new_dps);
+        
+        response.render('bought.hbs', {
+            name: f_name
+        })
+    } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
+        var character_name = await users_character.data()['character_name'];
+        var health = await users_character.data()['character_health'];
+        var dps = await users_character.data()['character_dps']
+        var current_user = await fbdb.collection('users').doc(user_email).get();
+        var money = await current_user.data()['hbucks'];
+        var character_class = await users_character.data()['class'];
+        var character_item = await users_character.data()['item']
+
+        response.render('store_sword.hbs', {
+            output: 'You do not have enough hbucks!',
+            title_page: 'Sword',
+            header: 'Sword',
+            username: f_name,
+            character_name: `${character_name}`,
+            character_health: `${health}`,
+            character_dps: `${dps}`,
+            character_class: character_class,
+            character_item: character_item,
             currency: `${money}`
         })
     }
@@ -476,21 +863,46 @@ app.get('/account_error', (request, response) => {
     }
 });
 
+var advantage = 0;
+var advantage_msg = '';
+var enemy_class = '';
+var player_class = '';
+
 app.get('/fight', async (request, response) => {
     var outcome = 'Win';
+    var classes = ['Sword', 'Spear', 'Axe'];
 
     if (authentication === false) {
         response.redirect('/');
     } else {
         var character_db = await fbdb.collection('characters').doc(user_email).get();
         try {
-            var name_player = character_db.data()['character_name'];
-            var health_player = character_db.data()['character_health'];
-            var dps_player = character_db.data()['character_dps'];
-            var health_enemy = _.random(health_player - 10, _.round(health_player + 5));
-            var dps_enemy = _.random(dps_player - 10, dps_player + 3);
+            var player_item = await character_db.data()['item'];
+            var name_player = await character_db.data()['character_name'];
+            var health_player = await character_db.data()['character_health'];
+            var dps_player = await character_db.data()['character_dps'];
+            player_class = await character_db.data()['class'];
+            var health_enemy =  await _.random(health_player - 10, _.round(health_player + 5));
+            var dps_enemy = await _.random(dps_player - 10, dps_player + 3);
+            enemy_class = await classes[_.random(0,2)];
 
-            fight.add_info(name_player, health_player, dps_player, health_enemy, dps_enemy);
+            if (player_class == 'Sword' && enemy_class == 'Axe' || player_class == 'Spear' && enemy_class == 'Sword' || player_class == 'Axe' && enemy_class == 'Spear') {
+                advantage = 1;
+                advantage_msg = `You have the weapon advantage! +8 DPS and +8 Health for ${name_player}!`;
+                health_player = health_player + 8;
+                dps_player = dps_player + 8;
+            } else if (player_class == 'Axe' && enemy_class == 'Sword' || player_class == 'Sword' && enemy_class == 'Spear' || player_class == 'Spear' && enemy_class == 'Axe') {
+                advantage = 2;
+                advantage_msg = 'Enemy has the weapon advantage! +8 DPS and +8 Health for the Enemy!'
+                dps_enemy = dps_enemy + 8;
+                health_enemy = health_enemy + 8; 
+            } else {
+                advantage = 0;
+                advantage_msg = `No weapon advantage given!`
+            }
+
+
+            await fight.add_info(name_player, health_player, dps_player, health_enemy, dps_enemy, player_class, enemy_class, advantage, advantage_msg);
 
             response.render('fighting.hbs', {
                 title_page: `Let's fight!`,
@@ -501,9 +913,14 @@ app.get('/fight', async (request, response) => {
                 health_player: `Health: ${health_player}`,
                 dps_player: `DPS: ${dps_player}`,
                 health_enemy: `Health: ${health_enemy}`,
-                dps_enemy: `DPS: ${dps_enemy}`
+                dps_enemy: `DPS: ${dps_enemy}`,
+                enemy_class: `Enemy Item: ${enemy_class}`,
+                player_class: `Player Class: ${player_class}`,
+                player_item: `Player's Item: ${player_item}`,
+                advantage_msg: advantage_msg
             })
         } catch (e) {
+            console.log(e);
             response.render('fighting.hbs', {
                 title_page: 'Error 404',
                 header: 'Error 404'
@@ -516,12 +933,14 @@ app.get('/battle', async (request, response) => {
     if (authentication === false) {
         response.redirect('/')
     } else {
+        var users_character = await fbdb.collection('characters').doc(user_email).get();
         var arena_stats = await fight.get_info(); //This is a dictionary
         var player_name = arena_stats.name;
         var player_health = arena_stats.health;
         var player_dps = arena_stats.dps;
         var enemy_health = arena_stats.health_enemy;
         var enemy_dps = arena_stats.dps_enemy;
+        var player_item = users_character.data()['item'];
         var new_player_health = player_health - enemy_dps;
         var new_enemy_health = enemy_health - player_dps;
 
@@ -530,7 +949,7 @@ app.get('/battle', async (request, response) => {
         } else if (new_enemy_health > new_player_health && new_player_health > 0) {
             reply = 'Enemy is winning'
         }
-        fight.add_info(player_name, new_player_health, player_dps, new_enemy_health, enemy_dps);
+        fight.add_info(player_name, new_player_health, player_dps, new_enemy_health, enemy_dps, player_class, enemy_class, advantage, advantage_msg);
 
         if (new_player_health <= 0 && new_enemy_health > 0 || new_player_health <= 0 && new_enemy_health <= 0) {
             var current = await fbdb.collection('characters').doc(user_email).get();
@@ -550,15 +969,12 @@ app.get('/battle', async (request, response) => {
             };
             fbdb.collection('characters').doc(user_email).update(win);
             var won = 'YOU WIN!';
-            console.log(hbucks);
             var randomaward = Math.floor((Math.random() * 10) + 1);
             var user_current = await fbdb.collection('users').doc(user_email).get()
             hbucks = {
                 hbucks: (user_current.data()['hbucks'] + randomaward)
             };
-            console.log(hbucks);
             fbdb.collection('users').doc(user_email).update(hbucks);
-            console.log(randomaward);
             response.render('win_lose_page.hbs', {
                 win_lose: `${won}`,
                 currency_earned: randomaward
@@ -574,6 +990,10 @@ app.get('/battle', async (request, response) => {
                 dps_player: `DPS: ${player_dps}`,
                 health_enemy: `Health: ${new_enemy_health}`,
                 dps_enemy: `DPS: ${enemy_dps}`,
+                enemy_class: `Enemy Item: ${enemy_class}`,
+                player_class: `Player Class: ${player_class}`,
+                player_item: `Player's Item: ${player_item}`,
+                advantage_msg: advantage_msg,
                 outcome: `${reply}`
             })
         }
